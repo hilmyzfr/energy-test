@@ -1,8 +1,9 @@
 """
-SHAP explainability for the KNN energy consumption forecasting model.
+SHAP and LIME explainability for the KNN energy consumption forecasting model.
 Generates:
-  reports/shap_summary.png   — beeswarm summary across all test predictions
-  reports/shap_waterfall.png — waterfall plot for a single test prediction
+  reports/shap_summary.png      — SHAP beeswarm summary across all test predictions
+  reports/shap_waterfall.png    — SHAP waterfall plot for a single test prediction
+  reports/lime_explanation.png  — LIME bar chart for a single test prediction
 """
 
 import os
@@ -12,6 +13,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import shap
+from lime import lime_tabular
 
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
@@ -72,6 +74,34 @@ def save_waterfall_plot(shap_values, idx, output_path):
     print(f"Saved waterfall plot → {output_path}")
 
 
+def run_lime(X_train, X_test, features, predict_fn, idx=0):
+    """
+    Use LimeTabularExplainer (model-agnostic).
+    Fits a local linear model around a single prediction.
+    """
+    explainer = lime_tabular.LimeTabularExplainer(
+        training_data=X_train,
+        feature_names=features,
+        mode='regression',
+        random_state=42,
+    )
+    explanation = explainer.explain_instance(
+        data_row=X_test[idx],
+        predict_fn=predict_fn,
+        num_features=len(features),
+    )
+    return explanation
+
+
+def save_lime_plot(explanation, output_path):
+    fig = explanation.as_pyplot_figure()
+    fig.set_size_inches(9, 5)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f"Saved LIME explanation → {output_path}")
+
+
 def main():
     os.makedirs(REPORTS_DIR, exist_ok=True)
 
@@ -97,6 +127,10 @@ def main():
 
     save_summary_plot(shap_values, summary_path)
     save_waterfall_plot(shap_values, idx=0, output_path=waterfall_path)
+
+    print("Computing LIME explanation...")
+    lime_exp = run_lime(X_train, X_test, features, predict_fn, idx=0)
+    save_lime_plot(lime_exp, os.path.join(REPORTS_DIR, 'lime_explanation.png'))
 
     print("\nDone. Reports saved to reports/")
 
