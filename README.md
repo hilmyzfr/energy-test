@@ -137,7 +137,7 @@ Two separate checks run on every prediction:
         ▼
   KNN · MLP · Baseline            trained on 2006–2016, tested on 2017
         │
-        ├──▶  SHAP                KernelExplainer → feature importance plots
+        ├──▶  SHAP + LIME         KernelExplainer + LimeTabularExplainer → reports/
         │
         └──▶  FastAPI             /predict endpoint with plausibility check
                 │
@@ -164,19 +164,38 @@ The dbt project (`dbt_energy/`) runs entirely on local DuckDB — no cloud requi
 - `unique` on every date column
 - `accepted_values` on `day_of_week` (0–6) and `is_weekend` (0–1)
 
-## SHAP explainability
+## Explainability
 
-KNN has no built-in feature importance, so SHAP `KernelExplainer` is used — it
-works model-agnostically by perturbing inputs against a background sample of 100
-training rows and measuring the effect on predictions.
+Two complementary model-agnostic methods are used, both working through the same
+prediction function wrapper so the KNN and scaler are only trained once.
+
+### SHAP
+
+`KernelExplainer` perturbs inputs against a background of 100 random training
+samples and attributes the prediction change to each feature using Shapley values.
+Shapley values satisfy additivity and consistency, so contributions across features
+always sum to the full prediction. Slower than LIME but globally coherent across
+all 50 explained predictions.
 
 **Summary plot** — feature importance ranked across 50 test predictions:
 
 ![SHAP summary](reports/shap_summary.png)
 
-**Waterfall plot** — per-feature contribution breakdown for a single prediction:
+**Waterfall plot** — per-feature contribution for a single prediction:
 
 ![SHAP waterfall](reports/shap_waterfall.png)
+
+### LIME
+
+`LimeTabularExplainer` fits a weighted linear surrogate model in the local
+neighbourhood of a single instance by sampling nearby points and seeing how the
+prediction changes. Faster than SHAP and useful for quick per-prediction
+inspection, but the explanation is local only and can vary slightly between runs
+(fixed here with `random_state=42`).
+
+**LIME explanation** — feature contributions for the same single prediction:
+
+![LIME explanation](reports/lime_explanation.png)
 
 ## How to run
 
@@ -186,10 +205,10 @@ pip install -r requirements.txt
 python3 src/train.py
 ```
 
-**Generate SHAP plots:**
+**Generate SHAP and LIME plots:**
 ```bash
 python3 src/explain.py
-# → reports/shap_summary.png, reports/shap_waterfall.png
+# → reports/shap_summary.png, reports/shap_waterfall.png, reports/lime_explanation.png
 ```
 
 **Run dbt pipeline (local DuckDB):**
