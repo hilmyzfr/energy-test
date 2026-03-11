@@ -205,3 +205,11 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# dbt
+dbt_energy/dbt_internal_packages/
+dbt_energy/target/
+dbt_energy/logs/
+dbt_energy/.user.yml
+dbt_energy/energy.duckdb
+dbt_energy/energy.duckdb.wal
