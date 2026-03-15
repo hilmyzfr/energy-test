@@ -78,7 +78,8 @@ def split_data_extended(data):
         print(f"Train: up to {test_year - 1}, Test: {test_year}")
 
     features = ['dayofweek', 'month', 'is_weekend', 'is_holiday',
-                'temperature', 'lag_1', 'lag_7', 'rolling_7']
+                'temperature', 'lag_1', 'lag_7', 'rolling_7',
+                'holiday_temp', 'weekend_temp']
     target = 'Consumption'
     return train, test, features, target
 

@@ -97,6 +97,10 @@ def add_features(df, temperature):
     data['lag_7'] = data['Consumption'].shift(7)
     data['rolling_7'] = data['Consumption'].shift(1).rolling(7).mean()
     
+    # interaction features — cold holidays/weekends still need heating
+    data['holiday_temp'] = data['is_holiday'] * data['temperature']
+    data['weekend_temp'] = data['is_weekend'] * data['temperature']
+    
     data = data.dropna()
     return data
 
@@ -104,7 +108,8 @@ def split_data(data):
     train = data[data.index.year < 2017]
     test = data[data.index.year == 2017]
     features = ['dayofweek', 'month', 'is_weekend', 'is_holiday',
-                'temperature', 'lag_1', 'lag_7', 'rolling_7']
+                'temperature', 'lag_1', 'lag_7', 'rolling_7',
+                'holiday_temp', 'weekend_temp']
     target = 'Consumption'
     return train, test, features, target
 

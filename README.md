@@ -42,6 +42,10 @@ KNN is the production model — fast to train, near instant inference, and close
 | 2024 | 1,071 GWh | 1,073 GWh | -0.2% | 2.5°C |
 | 2025 | 1,072 GWh | 1,160 GWh | -7.6% | -7.1°C |
 
+The 2025 error was caused by the model ignoring temperature on holidays — it learned
+"holiday = low" regardless of weather. Adding `holiday_temp` and `weekend_temp`
+interaction features fixes this: cold holidays now correctly predict higher consumption.
+
 ## LangChain agent
 
 A conversational layer over the API. Ask in natural language instead of crafting JSON:
@@ -113,5 +117,4 @@ Open-Meteo API, SMARD API, Docker
 
 - LLM email parser to auto-extract special events from customer notifications
 - RAG over energy documentation for contextual Q&A
-- Temperature-holiday interaction feature for cold holiday predictions
 - Drift monitoring and automated retraining via GitHub Actions
