@@ -43,9 +43,14 @@ slightly behind MLP on accuracy.
 | 2024 | 1,086 GWh | 1,073 GWh | +1.2% | 2.5°C |
 | 2025 | 1,083 GWh | 1,160 GWh | -6.6% | -7.1°C |
 
-Under 3% error on 2023 and 2024. The 2025 miss (-6.6%) is a cold-weather edge case: at -7.1°C, heating demand pushed actual consumption ~80 GWh above the model's holiday baseline. 
-I added holiday_temp and weekend_temp interaction features, which help but don't fully solve it since cold holidays are rare in the training data and get outvoted by mild ones in KNN.
-The plausibility checker also flags valid holiday predictions because its expected range includes normal working days. A holiday-aware threshold would fix this.
+Under 3% error on 2023 and 2024. The 2025 miss (-6.6%) is a cold-weather edge case:
+at -7.1°C, heating demand pushed actual consumption ~80 GWh above the model's holiday
+baseline. I added `holiday_temp` and `weekend_temp` interaction features, which help
+but don't fully solve it since cold holidays are rare in the training data and get
+outvoted by mild ones in KNN.
+
+The plausibility checker also flags valid holiday predictions because its expected
+range includes normal working days. A holiday-aware threshold would fix this.
 
 ## LangChain agent
 
@@ -62,12 +67,12 @@ It uses a ReAct agent (LangGraph) with three tools:
 Example interactions:
 
 ```
-You: What's the forecast for next Friday?
+You: Yesterday's consumption was 1500 GWh, is that normal for a Tuesday in March?
 
-Agent: Predicted consumption for Friday March 21 is 1,387 GWh (KNN model).
-       I pulled yesterday's actual grid load from SMARD (1,352 GWh) and
-       last week's (1,389 GWh) to use as inputs. Temperature forecast is
-       7.2°C, not a holiday. Plausibility check passed.
+Agent: That's about 11% above the historical average for March Tuesdays
+       (~1,350 GWh). Not extreme enough to flag a data issue, but worth
+       checking. Could be a cold snap driving heating demand, or an
+       industrial event. Want me to run a forecast using that value?
 ```
 
 ```
@@ -81,15 +86,6 @@ Agent: Here are the predictions for December 25, 2025:
        highest because it weights recent same-weekday values. KNN and MLP
        both predict lower, relying more on the holiday flag. Actual
        consumption was 1,160 GWh, so the baseline was closest here.
-```
-
-```
-You: Yesterday's consumption was 1500 GWh, is that normal for a Tuesday in March?
-
-Agent: That's about 11% above the historical average for March Tuesdays
-       (~1,350 GWh). Not extreme enough to flag a data issue, but worth
-       checking. Could be a cold snap driving heating demand, or an
-       industrial event. Want me to run a forecast using that value?
 ```
 
 The agent runs on Claude (Anthropic) via `langchain-anthropic`. You can swap
